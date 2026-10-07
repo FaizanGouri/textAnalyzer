@@ -11,9 +11,9 @@ final-year project designed for a clean, maintainable, module-based codebase.
 
 ## Current status
 
-Phase 6 is complete: the application supports multiline text input, dynamic
-text storage, statistical and frequency analysis, search and replacement, and
-loading/saving plain-text files. Generated reports are not yet implemented.
+Phase 7 is complete: the application supports multiline text input, dynamic
+text storage, statistical and frequency analysis, search and replacement,
+plain-text file loading/saving, and exporting comprehensive analysis reports.
 
 ## Build
 
@@ -33,26 +33,29 @@ make run
 - `src/` — C source files
 - `tests/` — module tests
 - `data/` — sample and input text files
-- `reports/` — generated reports
+- `reports/` — generated analysis reports
 - `docs/` — project documentation
-- `build/` — generated executable
+- `build/` — generated executable and test binaries
 
 The root LaTeX architecture specification is the authoritative design document.
-
-## Planned major features
-
-- Word and phrase search
-- Occurrence counting with case-sensitive or case-insensitive matching
-- Whole-word and substring matching
-- Confirmed text replacement
-- Load complete `.txt` files into the current text buffer
-- Save current text to a `.txt` file, including empty text
 
 ## File workflow
 
 Use menu option 7 to load a text file and option 8 to save the current text.
 Failed loads leave the current text unchanged. File-open, read, write, close,
 and memory-allocation failures are reported to the user.
-- Search and replacement
-- Text-file loading and saving
-- Analysis reports
+
+## Report Generation
+
+Use menu option 9 to generate a structured analysis report from the current
+text buffer.
+
+- **Location:** Reports are stored in the `reports/` directory.
+- **Filename Format:** `analysis_report_YYYYMMDD_HHMMSS.txt` (with collision-avoidance suffixes such as `_1.txt` when necessary).
+- **Report Contents:**
+  - **Metadata:** Generation date/time and input source origin.
+  - **General Statistics:** Total characters, characters excluding whitespace, words, lines, sentences, and paragraphs.
+  - **Character Statistics:** Uppercase letters, lowercase letters, digits, spaces, tabs, special characters, vowels, and consonants.
+  - **Word Statistics:** Longest word, shortest word, average word length, average sentence length, and estimated reading time.
+  - **Character Frequency:** Most frequent character and complete non-whitespace frequency table.
+  - **Word Frequency:** Most frequent word, Top 10 words ranked by occurrence, and full normalized word frequency table.

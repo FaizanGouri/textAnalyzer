@@ -3,6 +3,7 @@
 #include "analyzer.h"
 #include "file_handler.h"
 #include "frequency.h"
+#include "report.h"
 #include "search.h"
 
 #include <ctype.h>
@@ -15,6 +16,8 @@
 
 #define MENU_INPUT_SIZE 64U
 #define SEARCH_INPUT_SIZE 512U
+
+static char current_source_info[SEARCH_INPUT_SIZE] = "Manual Input";
 
 static void display_menu(void)
 {
@@ -29,6 +32,7 @@ static void display_menu(void)
     puts("6. Search & Replace");
     puts("7. Load Text File");
     puts("8. Save Text File");
+    puts("9. Generate Analysis Report");
     puts("0. Exit");
     fputs("\nEnter choice: ", stdout);
 }
@@ -131,6 +135,9 @@ static void enter_text(TextBuffer *buffer)
         puts("[ERROR] Invalid text input.");
     } else if (buffer->length == 0U) {
         puts("[No text entered.]");
+    } else {
+        strncpy(current_source_info, "Manual Input", sizeof(current_source_info));
+        current_source_info[sizeof(current_source_info) - 1U] = '\0';
     }
 }
 
@@ -151,6 +158,8 @@ static void load_text_file_ui(TextBuffer *buffer)
 
     status = load_text_file(filename, buffer);
     if (status == STATUS_SUCCESS) {
+        strncpy(current_source_info, filename, sizeof(current_source_info));
+        current_source_info[sizeof(current_source_info) - 1U] = '\0';
         if (buffer->length == 0U) {
             puts("Text file loaded successfully. The file is empty.");
         } else {
@@ -187,6 +196,30 @@ static void save_text_file_ui(const TextBuffer *buffer)
         puts("[ERROR] Invalid file path or text buffer.");
     } else {
         puts("[ERROR] Unable to save file.");
+    }
+}
+
+static void generate_report_ui(const TextBuffer *buffer)
+{
+    char report_path[REPORT_DEFAULT_MAX_PATH];
+    const char *source;
+    Status status;
+
+    if (buffer == NULL || buffer->data == NULL || buffer->length == 0U) {
+        puts("[ERROR] No text available to generate a report.");
+        return;
+    }
+
+    source = current_source_info[0] != '\0' ? current_source_info : "Manual Input";
+    status = generate_report(buffer, source, report_path, sizeof(report_path));
+    if (status == STATUS_SUCCESS) {
+        printf("Analysis report generated successfully: %s\n", report_path);
+    } else if (status == STATUS_ERROR_MEMORY) {
+        puts("[ERROR] Memory allocation failed during report generation.");
+    } else if (status == STATUS_ERROR_FILE) {
+        puts("[ERROR] Unable to create report file. Please verify 'reports' directory exists.");
+    } else {
+        puts("[ERROR] Unable to generate analysis report.");
     }
 }
 
@@ -634,6 +667,7 @@ Status ui_run(TextBuffer *buffer)
                 break;
             case 3:
                 text_buffer_clear(buffer);
+                current_source_info[0] = '\0';
                 puts("Current text cleared successfully.");
                 break;
             case 4:
@@ -650,6 +684,9 @@ Status ui_run(TextBuffer *buffer)
                 break;
             case 8:
                 save_text_file_ui(buffer);
+                break;
+            case 9:
+                generate_report_ui(buffer);
                 break;
             case 0:
                 return STATUS_SUCCESS;

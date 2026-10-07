@@ -11,6 +11,7 @@ TEST_TARGET := $(BUILD_DIR)/test_analyzer$(EXE)
 FREQUENCY_TEST_TARGET := $(BUILD_DIR)/test_frequency$(EXE)
 SEARCH_TEST_TARGET := $(BUILD_DIR)/test_search$(EXE)
 FILE_HANDLER_TEST_TARGET := $(BUILD_DIR)/test_file_handler$(EXE)
+REPORT_TEST_TARGET := $(BUILD_DIR)/test_report$(EXE)
 SOURCES := $(wildcard src/*.c)
 
 .PHONY: all run test clean
@@ -35,6 +36,8 @@ test:
 	./$(SEARCH_TEST_TARGET)
 	$(CC) $(CFLAGS) tests/test_file_handler.c src/file_handler.c src/text_utils.c -o $(FILE_HANDLER_TEST_TARGET)
 	./$(FILE_HANDLER_TEST_TARGET)
+	$(CC) $(CFLAGS) tests/test_report.c src/report.c src/analyzer.c src/frequency.c src/text_utils.c -o $(REPORT_TEST_TARGET)
+	./$(REPORT_TEST_TARGET)
 
 clean:
-	rm -f $(TARGET) $(TEST_TARGET) $(FREQUENCY_TEST_TARGET) $(SEARCH_TEST_TARGET) $(FILE_HANDLER_TEST_TARGET)
+	rm -f $(TARGET) $(TEST_TARGET) $(FREQUENCY_TEST_TARGET) $(SEARCH_TEST_TARGET) $(FILE_HANDLER_TEST_TARGET) $(REPORT_TEST_TARGET)
