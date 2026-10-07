@@ -1,0 +1,17 @@
+# Build output
+build/*
+!build/.gitkeep
+
+# Generated reports
+reports/*
+!reports/.gitkeep
+
+# Compiler and editor artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.tmp
+*.swp
+*.swo
+.vscode/

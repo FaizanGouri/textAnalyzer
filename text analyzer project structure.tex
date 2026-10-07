@@ -1,0 +1,1501 @@
+\documentclass[12pt,a4paper]{article}
+
+% ---------------------------------------------------------
+% PACKAGES
+% ---------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+\geometry{
+    left=25mm,
+    right=25mm,
+    top=25mm,
+    bottom=25mm
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+% ---------------------------------------------------------
+% CODE STYLE
+% ---------------------------------------------------------
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+
+\lstset{
+    backgroundcolor=\color{codegray},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    showstringspaces=false
+}
+
+% ---------------------------------------------------------
+% DOCUMENT
+% ---------------------------------------------------------
+\title{
+    \textbf{Text Analyzer}\\
+    \large MCA Final Project -- Software Architecture Specification
+}
+
+\author{}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+% =========================================================
+% 1. PROJECT OVERVIEW
+% =========================================================
+
+\section{Project Overview}
+
+\subsection{Project Name}
+
+\textbf{Text Analyzer}
+
+\subsection{Project Type}
+
+Console-based modular application developed in the C programming language.
+
+\subsection{Academic Level}
+
+MCA Final Project.
+
+\subsection{Primary Objective}
+
+The objective of the project is to develop a robust and modular text
+analysis application capable of accepting text from the user or from
+text files and performing statistical, frequency, search, replacement,
+and reporting operations.
+
+The application must be designed using modular C programming practices
+rather than placing all functionality inside a single source file.
+
+\subsection{Primary Goals}
+
+The system shall:
+
+\begin{enumerate}
+    \item Accept text directly from the user.
+    \item Load text from external text files.
+    \item Analyze text statistically.
+    \item Analyze character and word frequencies.
+    \item Search for words and phrases.
+    \item Replace words or phrases.
+    \item Save modified text.
+    \item Generate analysis reports.
+    \item Handle invalid input and file errors safely.
+    \item Use dynamic memory where appropriate.
+    \item Maintain clean separation between modules.
+    \item Provide a testable and maintainable codebase.
+\end{enumerate}
+
+% =========================================================
+% 2. TECHNOLOGY STACK
+% =========================================================
+
+\section{Technology Stack}
+
+\begin{longtable}{p{0.30\textwidth} p{0.60\textwidth}}
+\toprule
+\textbf{Technology} & \textbf{Purpose} \\
+\midrule
+C & Core programming language \\
+GCC & C compiler \\
+Make & Build automation \\
+Git & Version control \\
+GitHub & Remote repository \\
+Standard C Library & File, string, memory and character operations \\
+\bottomrule
+\end{longtable}
+
+No external third-party C libraries shall be introduced unless there is
+a clear technical requirement and the dependency is explicitly approved
+before implementation.
+
+% =========================================================
+% 3. ARCHITECTURE
+% =========================================================
+
+\section{System Architecture}
+
+The project shall follow a modular layered architecture.
+
+\subsection{High-Level Architecture}
+
+\begin{verbatim}
+                         +----------------------+
+                         |       main.c         |
+                         | Application Entry    |
+                         +----------+-----------+
+                                    |
+                                    v
+                         +----------------------+
+                         |        ui.c          |
+                         | Menu / User Input    |
+                         +----------+-----------+
+                                    |
+             +----------------------+----------------------+
+             |                      |                      |
+             v                      v                      v
+      +-------------+        +-------------+        +-------------+
+      | analyzer.c  |        |frequency.c  |        | search.c    |
+      | Statistics  |        | Frequency   |        | Search/     |
+      | Engine      |        | Analysis    |        | Replace     |
+      +------+------+        +------+------+        +------+------+
+             |                      |                      |
+             +----------------------+----------------------+
+                                    |
+                                    v
+                         +----------------------+
+                         |  text_utils.c        |
+                         | Common Text Helpers  |
+                         +----------+-----------+
+                                    |
+                                    v
+                         +----------------------+
+                         | file_handler.c       |
+                         | File I/O             |
+                         +----------+-----------+
+                                    |
+                                    v
+                         +----------------------+
+                         |    Text Files        |
+                         | data/ and reports/   |
+                         +----------------------+
+\end{verbatim}
+
+% =========================================================
+% 4. DIRECTORY STRUCTURE
+% =========================================================
+
+\section{Directory Structure}
+
+The repository shall use the following structure:
+
+\begin{verbatim}
+text-analyzer/
+|
++-- include/
+|   +-- analyzer.h
+|   +-- frequency.h
+|   +-- file_handler.h
+|   +-- search.h
+|   +-- report.h
+|   +-- text_utils.h
+|   +-- ui.h
+|   +-- common.h
+|
++-- src/
+|   +-- main.c
+|   +-- analyzer.c
+|   +-- frequency.c
+|   +-- file_handler.c
+|   +-- search.c
+|   +-- report.c
+|   +-- text_utils.c
+|   +-- ui.c
+|
++-- tests/
+|   +-- test_analyzer.c
+|   +-- test_frequency.c
+|   +-- test_search.c
+|   +-- test_text_utils.c
+|
++-- data/
+|   +-- sample.txt
+|   +-- input.txt
+|
++-- reports/
+|   +-- .gitkeep
+|
++-- docs/
+|   +-- project_overview.md
+|   +-- architecture.md
+|   +-- test_cases.md
+|   +-- user_manual.md
+|
++-- build/
+|   +-- .gitkeep
+|
++-- Makefile
++-- README.md
++-- .gitignore
++-- LICENSE
+\end{verbatim}
+
+% =========================================================
+% 5. MODULES
+% =========================================================
+
+\section{Module Architecture}
+
+\subsection{main.c}
+
+\textbf{Responsibility:}
+
+The \texttt{main.c} file is the application entry point.
+
+It shall:
+
+\begin{enumerate}
+    \item Initialize the application.
+    \item Start the user interface.
+    \item Control the application lifecycle.
+    \item Perform final cleanup.
+\end{enumerate}
+
+The main file shall not contain business logic for text analysis.
+
+\subsection{ui.c / ui.h}
+
+Responsible for:
+
+\begin{itemize}
+    \item Main menu.
+    \item Submenus.
+    \item User input.
+    \item Displaying results.
+    \item Displaying errors.
+    \item Displaying confirmations.
+\end{itemize}
+
+The UI module shall call appropriate service modules instead of
+implementing analysis logic itself.
+
+\subsection{analyzer.c / analyzer.h}
+
+This module is the primary statistical analysis engine.
+
+It shall calculate:
+
+\begin{itemize}
+    \item Total characters.
+    \item Characters excluding whitespace.
+    \item Total words.
+    \item Total lines.
+    \item Total sentences.
+    \item Total paragraphs.
+    \item Spaces.
+    \item Tabs.
+    \item Digits.
+    \item Special characters.
+    \item Uppercase letters.
+    \item Lowercase letters.
+    \item Vowels.
+    \item Consonants.
+    \item Longest word.
+    \item Shortest word.
+    \item Average word length.
+    \item Average sentence length.
+    \item Estimated reading time.
+\end{itemize}
+
+\subsection{frequency.c / frequency.h}
+
+Responsible for:
+
+\begin{itemize}
+    \item Character frequency.
+    \item Word frequency.
+    \item Most frequent character.
+    \item Most frequent word.
+    \item Top-N words.
+\end{itemize}
+
+Frequency analysis shall be independent from the user interface.
+
+\subsection{search.c / search.h}
+
+Responsible for:
+
+\begin{itemize}
+    \item Word search.
+    \item Phrase search.
+    \item Occurrence counting.
+    \item Case-sensitive search.
+    \item Case-insensitive search.
+    \item Word replacement.
+    \item Phrase replacement.
+\end{itemize}
+
+\subsection{file\_handler.c / file\_handler.h}
+
+Responsible for:
+
+\begin{itemize}
+    \item Opening files.
+    \item Reading files.
+    \item Writing files.
+    \item Saving modified text.
+    \item Checking file availability.
+    \item Handling file-related errors.
+\end{itemize}
+
+\subsection{text\_utils.c / text\_utils.h}
+
+Contains reusable text-processing helper functions.
+
+Examples include:
+
+\begin{itemize}
+    \item Character classification.
+    \item Vowel detection.
+    \item Word-character detection.
+    \item Sentence-ending detection.
+    \item Whitespace handling.
+    \item Case normalization.
+    \item Word normalization.
+    \item String trimming.
+\end{itemize}
+
+No duplicated helper logic should exist across analysis modules.
+
+\subsection{report.c / report.h}
+
+Responsible for generating human-readable analysis reports.
+
+Reports shall contain:
+
+\begin{itemize}
+    \item Source information.
+    \item General statistics.
+    \item Character statistics.
+    \item Word statistics.
+    \item Frequency statistics.
+    \item Search statistics when applicable.
+\end{itemize}
+
+Reports shall be stored inside the \texttt{reports/} directory.
+
+% =========================================================
+% 6. DATA STRUCTURES
+% =========================================================
+
+\section{Core Data Structures}
+
+\subsection{TextStatistics}
+
+The project shall define a structure similar to:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    int characters;
+    int characters_no_space;
+
+    int words;
+    int lines;
+    int sentences;
+    int paragraphs;
+
+    int spaces;
+    int tabs;
+    int digits;
+    int special_chars;
+
+    int uppercase;
+    int lowercase;
+
+    int vowels;
+    int consonants;
+
+    double average_word_length;
+    double average_sentence_length;
+    double estimated_reading_time;
+} TextStatistics;
+\end{lstlisting}
+
+\subsection{WordFrequency}
+
+A word-frequency record may be represented as:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    char *word;
+    int count;
+} WordFrequency;
+\end{lstlisting}
+
+\subsection{CharacterFrequency}
+
+Character frequency may be represented as:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    unsigned char character;
+    int count;
+} CharacterFrequency;
+\end{lstlisting}
+
+% =========================================================
+% 7. COMMON DEFINITIONS
+% =========================================================
+
+\section{Common Definitions}
+
+The \texttt{common.h} file shall contain shared constants and status
+codes.
+
+Example:
+
+\begin{lstlisting}[language=C]
+#ifndef COMMON_H
+#define COMMON_H
+
+#define MAX_FILENAME 256
+#define MAX_WORD_LENGTH 100
+#define DEFAULT_READING_SPEED 200
+
+typedef enum {
+    STATUS_SUCCESS = 0,
+    STATUS_ERROR_FILE,
+    STATUS_ERROR_MEMORY,
+    STATUS_ERROR_INPUT,
+    STATUS_ERROR_INVALID
+} Status;
+
+#endif
+\end{lstlisting}
+
+% =========================================================
+% 8. PUBLIC INTERFACES
+% =========================================================
+
+\section{Module Interfaces}
+
+\subsection{Analyzer Interface}
+
+The analyzer module should expose functions similar to:
+
+\begin{lstlisting}[language=C]
+Status analyze_text(
+    const char *text,
+    TextStatistics *statistics
+);
+
+int count_words(const char *text);
+int count_lines(const char *text);
+int count_sentences(const char *text);
+int count_paragraphs(const char *text);
+\end{lstlisting}
+
+\subsection{File Handler Interface}
+
+\begin{lstlisting}[language=C]
+Status load_file(
+    const char *filename,
+    char **content
+);
+
+Status save_file(
+    const char *filename,
+    const char *content
+);
+\end{lstlisting}
+
+\subsection{Search Interface}
+
+\begin{lstlisting}[language=C]
+int search_word(
+    const char *text,
+    const char *word,
+    int case_sensitive
+);
+
+int count_occurrences(
+    const char *text,
+    const char *pattern,
+    int case_sensitive
+);
+
+Status replace_text(
+    const char *text,
+    const char *search,
+    const char *replacement,
+    char **result,
+    int case_sensitive
+);
+\end{lstlisting}
+
+The exact signatures may be adjusted during implementation if a
+technically superior design is required, but unnecessary interface
+changes should be avoided.
+
+% =========================================================
+% 9. FUNCTIONAL REQUIREMENTS
+% =========================================================
+
+\section{Functional Requirements}
+
+\subsection{Text Input}
+
+The system shall allow the user to enter text manually.
+
+The system shall support multiline input.
+
+\subsection{File Input}
+
+The system shall allow the user to load a \texttt{.txt} file.
+
+If the file cannot be opened, the application shall display a clear
+error and return to the appropriate menu.
+
+\subsection{Basic Analysis}
+
+The system shall calculate all basic statistics defined in the
+\texttt{TextStatistics} structure.
+
+\subsection{Frequency Analysis}
+
+The system shall calculate character and word frequencies.
+
+Word frequency should be case-insensitive by default.
+
+For example:
+
+\begin{verbatim}
+Computer
+computer
+COMPUTER
+\end{verbatim}
+
+may be normalized to:
+
+\begin{verbatim}
+computer
+\end{verbatim}
+
+before frequency calculation.
+
+\subsection{Search}
+
+The user shall be able to search for words or phrases.
+
+Both case-sensitive and case-insensitive modes shall be supported.
+
+\subsection{Replace}
+
+The user shall be able to replace a word or phrase.
+
+The application must not modify the original text until the user
+explicitly confirms the operation.
+
+\subsection{Report Generation}
+
+The application shall generate a readable report in the
+\texttt{reports/} directory.
+
+% =========================================================
+% 10. NON-FUNCTIONAL REQUIREMENTS
+% =========================================================
+
+\section{Non-Functional Requirements}
+
+\begin{itemize}
+    \item The code shall follow modular design principles.
+    \item Functions should have single responsibilities.
+    \item Global mutable state should be avoided.
+    \item Dynamic memory must be released properly.
+    \item File handles must always be closed.
+    \item Invalid input must not crash the application.
+    \item Compiler warnings should be minimized.
+    \item Code should be portable across standard GCC environments.
+    \item The application should remain usable for reasonably large
+          text files.
+    \item Business logic shall remain independent of UI code.
+\end{itemize}
+
+% =========================================================
+% 11. MEMORY MANAGEMENT
+% =========================================================
+
+\section{Memory Management}
+
+Text loaded from files may require dynamic memory allocation.
+
+The lifecycle shall follow:
+
+\begin{verbatim}
+File
+  |
+  v
+malloc / realloc
+  |
+  v
+Text Buffer
+  |
+  +----> Analysis
+  |
+  +----> Search
+  |
+  +----> Frequency
+  |
+  +----> Report
+  |
+  v
+free()
+\end{verbatim}
+
+Every successful dynamic allocation shall have a corresponding
+deallocation.
+
+Memory allocation failures shall be detected and reported.
+
+% =========================================================
+% 12. ERROR HANDLING
+% =========================================================
+
+\section{Error Handling}
+
+The application shall handle at least the following conditions:
+
+\begin{enumerate}
+    \item File does not exist.
+    \item File cannot be opened.
+    \item File cannot be read.
+    \item File cannot be written.
+    \item Memory allocation failure.
+    \item Empty input.
+    \item Invalid menu selection.
+    \item Empty search pattern.
+    \item Empty replacement pattern where applicable.
+    \item Invalid filename.
+\end{enumerate}
+
+Example error messages:
+
+\begin{verbatim}
+[ERROR] File not found.
+[ERROR] Unable to open file.
+[ERROR] Memory allocation failed.
+[ERROR] Invalid menu choice.
+[ERROR] Text cannot be empty.
+\end{verbatim}
+
+The application should recover from user errors without terminating
+unexpectedly.
+
+% =========================================================
+% 13. USER INTERFACE
+% =========================================================
+
+\section{User Interface}
+
+The application shall provide a menu-driven console interface.
+
+\subsection{Main Menu}
+
+\begin{verbatim}
+========================================
+             TEXT ANALYZER
+========================================
+
+1. Enter Text
+2. Load Text File
+3. View Current Text
+4. Basic Statistics
+5. Character Frequency
+6. Word Frequency
+7. Search Text
+8. Replace Text
+9. Generate Report
+10. Save Text
+0. Exit
+
+Enter choice:
+\end{verbatim}
+
+\subsection{Analysis Menu}
+
+\begin{verbatim}
+========== ANALYSIS ==========
+
+1. Character Count
+2. Word Count
+3. Line Count
+4. Sentence Count
+5. Paragraph Count
+6. Letter Analysis
+7. Digit Analysis
+8. Special Character Analysis
+9. Complete Statistics
+0. Back
+\end{verbatim}
+
+\subsection{Frequency Menu}
+
+\begin{verbatim}
+======= FREQUENCY ANALYSIS =======
+
+1. Character Frequency
+2. Word Frequency
+3. Most Frequent Character
+4. Most Frequent Word
+5. Top 10 Words
+0. Back
+\end{verbatim}
+
+\subsection{Search Menu}
+
+\begin{verbatim}
+========== SEARCH ==========
+
+1. Search Word
+2. Search Phrase
+3. Count Occurrences
+4. Case-Sensitive Search
+5. Case-Insensitive Search
+6. Replace Word
+0. Back
+\end{verbatim}
+
+% =========================================================
+% 14. DATA FLOW
+% =========================================================
+
+\section{Data Flow}
+
+\subsection{File Analysis Flow}
+
+\begin{verbatim}
+User
+ |
+ v
+UI
+ |
+ v
+File Handler
+ |
+ v
+Text Buffer
+ |
+ +----------+----------+----------+
+ |          |          |          |
+ v          v          v          v
+Analyzer Frequency   Search     Report
+ |
+ v
+Statistics
+\end{verbatim}
+
+\subsection{Manual Input Flow}
+
+\begin{verbatim}
+User
+ |
+ v
+UI
+ |
+ v
+Input Buffer
+ |
+ v
+Text Buffer
+ |
+ +----> Analyzer
+ +----> Frequency
+ +----> Search
+ +----> Report
+\end{verbatim}
+
+% =========================================================
+% 15. FREQUENCY ANALYSIS
+% =========================================================
+
+\section{Frequency Analysis}
+
+\subsection{Character Frequency}
+
+The application shall count occurrences of characters.
+
+Example:
+
+\begin{verbatim}
+a : 25
+b : 7
+c : 14
+d : 9
+\end{verbatim}
+
+\subsection{Word Frequency}
+
+Words shall be normalized before comparison.
+
+Example:
+
+\begin{verbatim}
+Computer computer COMPUTER
+\end{verbatim}
+
+may produce:
+
+\begin{verbatim}
+computer : 3
+\end{verbatim}
+
+\subsection{Top-N Words}
+
+The application shall support displaying the most frequent words,
+with Top 10 as the default user-facing option.
+
+% =========================================================
+% 16. SEARCH AND REPLACE
+% =========================================================
+
+\section{Search and Replace}
+
+The system shall support:
+
+\begin{itemize}
+    \item Exact word search.
+    \item Phrase search.
+    \item Case-sensitive search.
+    \item Case-insensitive search.
+    \item Occurrence counting.
+    \item Replacement.
+\end{itemize}
+
+Replacement should operate on a newly generated text buffer rather
+than destructively modifying the original buffer.
+
+Example:
+
+\begin{verbatim}
+Original:
+I love C programming. C is powerful.
+
+Search:
+C
+
+Replacement:
+C language
+
+Result:
+I love C language programming. C language is powerful.
+\end{verbatim}
+
+The implementation must clearly define whether replacement operates on
+whole words or arbitrary substrings. Whole-word replacement should be
+preferred for word replacement.
+
+% =========================================================
+% 17. REPORT GENERATION
+% =========================================================
+
+\section{Report Generation}
+
+A report shall contain at least:
+
+\begin{verbatim}
+========================================
+        TEXT ANALYSIS REPORT
+========================================
+
+Source File:
+Date/Time:
+
+GENERAL STATISTICS
+------------------
+Characters:
+Characters Without Spaces:
+Words:
+Lines:
+Sentences:
+Paragraphs:
+
+CHARACTER ANALYSIS
+------------------
+Uppercase:
+Lowercase:
+Digits:
+Spaces:
+Tabs:
+Special Characters:
+Vowels:
+Consonants:
+
+WORD ANALYSIS
+-------------
+Longest Word:
+Shortest Word:
+Average Word Length:
+Average Sentence Length:
+Estimated Reading Time:
+
+FREQUENCY ANALYSIS
+------------------
+Most Frequent Word:
+Most Frequent Character:
+
+========================================
+\end{verbatim}
+
+% =========================================================
+% 18. TESTING
+% =========================================================
+
+\section{Testing Architecture}
+
+Testing shall be separated from production code.
+
+\subsection{Test Modules}
+
+\begin{verbatim}
+tests/
+|
++-- test_analyzer.c
++-- test_frequency.c
++-- test_search.c
++-- test_text_utils.c
+\end{verbatim}
+
+\subsection{Test Categories}
+
+The project shall test:
+
+\begin{itemize}
+    \item Normal input.
+    \item Empty input.
+    \item Single-word input.
+    \item Multiline input.
+    \item Punctuation.
+    \item Numbers.
+    \item Special characters.
+    \item Mixed uppercase/lowercase text.
+    \item Repeated words.
+    \item Search failures.
+    \item Replacement operations.
+    \item File errors.
+\end{itemize}
+
+Example:
+
+\begin{verbatim}
+TEST: Word Count
+Input: "Hello world"
+Expected: 2
+Actual: 2
+Result: PASS
+\end{verbatim}
+
+% =========================================================
+% 19. BUILD SYSTEM
+% =========================================================
+
+\section{Build System}
+
+The project shall use a Makefile.
+
+Required commands:
+
+\begin{verbatim}
+make
+make run
+make test
+make clean
+\end{verbatim}
+
+The executable should be generated inside:
+
+\begin{verbatim}
+build/text_analyzer
+\end{verbatim}
+
+The build process should compile source files separately and then link
+the resulting object files.
+
+% =========================================================
+% 20. COMPILER REQUIREMENTS
+% =========================================================
+
+\section{Compiler Requirements}
+
+The project should be compiled using GCC with strong warning flags.
+
+Recommended compilation flags:
+
+\begin{verbatim}
+-std=c11
+-Wall
+-Wextra
+-Wpedantic
+\end{verbatim}
+
+Warnings should be treated seriously and fixed rather than ignored.
+
+If the project later enables:
+
+\begin{verbatim}
+-Werror
+\end{verbatim}
+
+all existing warnings must first be resolved.
+
+% =========================================================
+% 21. GIT DEVELOPMENT STRATEGY
+% =========================================================
+
+\section{Git Development Strategy}
+
+Development shall be performed incrementally.
+
+\subsection{Phase 1}
+
+\textbf{Project Setup}
+
+\begin{itemize}
+    \item Create directory structure.
+    \item Create headers.
+    \item Create source files.
+    \item Create Makefile.
+    \item Create README.
+    \item Verify initial compilation.
+\end{itemize}
+
+Commit:
+
+\begin{verbatim}
+Phase 1: Initialize Text Analyzer project
+\end{verbatim}
+
+\subsection{Phase 2}
+
+\textbf{Basic Text Input}
+
+Implement:
+
+\begin{itemize}
+    \item Manual text input.
+    \item Text buffer.
+    \item View current text.
+\end{itemize}
+
+Commit:
+
+\begin{verbatim}
+Phase 2: Implement text input
+\end{verbatim}
+
+\subsection{Phase 3}
+
+\textbf{Basic Statistics}
+
+Implement:
+
+\begin{itemize}
+    \item Characters.
+    \item Words.
+    \item Lines.
+    \item Sentences.
+    \item Paragraphs.
+\end{itemize}
+
+Commit:
+
+\begin{verbatim}
+Phase 3: Implement basic text statistics
+\end{verbatim}
+
+\subsection{Phase 4}
+
+\textbf{Advanced Statistics}
+
+Implement:
+
+\begin{itemize}
+    \item Uppercase/lowercase.
+    \item Digits.
+    \item Special characters.
+    \item Vowels/consonants.
+    \item Longest/shortest word.
+    \item Average lengths.
+\end{itemize}
+
+Commit:
+
+\begin{verbatim}
+Phase 4: Implement advanced text statistics
+\end{verbatim}
+
+\subsection{Phase 5}
+
+\textbf{Character Frequency}
+
+Commit:
+
+\begin{verbatim}
+Phase 5: Implement character frequency analysis
+\end{verbatim}
+
+\subsection{Phase 6}
+
+\textbf{Word Frequency}
+
+Commit:
+
+\begin{verbatim}
+Phase 6: Implement word frequency analysis
+\end{verbatim}
+
+\subsection{Phase 7}
+
+\textbf{Search}
+
+Commit:
+
+\begin{verbatim}
+Phase 7: Implement text search
+\end{verbatim}
+
+\subsection{Phase 8}
+
+\textbf{Replace}
+
+Commit:
+
+\begin{verbatim}
+Phase 8: Implement text replacement
+\end{verbatim}
+
+\subsection{Phase 9}
+
+\textbf{File Handling}
+
+Implement:
+
+\begin{itemize}
+    \item Load text files.
+    \item Save text files.
+    \item File validation.
+    \item File error handling.
+\end{itemize}
+
+Commit:
+
+\begin{verbatim}
+Phase 9: Implement file handling
+\end{verbatim}
+
+\subsection{Phase 10}
+
+\textbf{Report Generation}
+
+Commit:
+
+\begin{verbatim}
+Phase 10: Implement analysis reports
+\end{verbatim}
+
+\subsection{Phase 11}
+
+\textbf{Testing and Bug Fixing}
+
+Commit:
+
+\begin{verbatim}
+Phase 11: Add tests and fix defects
+\end{verbatim}
+
+\subsection{Phase 12}
+
+\textbf{Final Documentation}
+
+Commit:
+
+\begin{verbatim}
+Phase 12: Complete documentation and final polish
+\end{verbatim}
+
+% =========================================================
+% 22. DEVELOPMENT RULES
+% =========================================================
+
+\section{Development Rules}
+
+The following rules are mandatory.
+
+\begin{enumerate}
+
+    \item Do not place the entire application inside
+    \texttt{main.c}.
+
+    \item Do not duplicate helper functions across modules.
+
+    \item UI code shall not contain core analysis algorithms.
+
+    \item File handling shall remain inside the file handler module.
+
+    \item Text analysis shall remain independent of file I/O.
+
+    \item Every dynamically allocated buffer shall have a clearly
+    defined owner.
+
+    \item Every allocated resource must eventually be released.
+
+    \item Every opened file must be closed.
+
+    \item Functions should perform one clearly defined responsibility.
+
+    \item Avoid unnecessary global variables.
+
+    \item Avoid unnecessary external dependencies.
+
+    \item Do not modify unrelated files while implementing a feature.
+
+    \item After every development phase, compile and test the project.
+
+    \item Do not proceed to the next major phase if the current phase
+    is broken.
+
+    \item Do not silently ignore compiler warnings.
+
+    \item Git commits should represent logical completed phases.
+
+\end{enumerate}
+
+% =========================================================
+% 23. PERFORMANCE
+% =========================================================
+
+\section{Performance Considerations}
+
+The analyzer should process a text file in a single or small number of
+linear passes whenever practical.
+
+For basic statistics, the target complexity should generally be:
+
+\[
+O(n)
+\]
+
+where \(n\) is the number of characters in the input.
+
+Frequency and search algorithms may have higher complexity depending on
+the chosen data structure, but unnecessary repeated full-text scans
+should be avoided.
+
+Memory usage should remain proportional to the size of the loaded text
+and required analysis structures.
+
+% =========================================================
+% 24. SECURITY AND ROBUSTNESS
+% =========================================================
+
+\section{Robustness Requirements}
+
+The implementation shall:
+
+\begin{itemize}
+    \item Avoid unsafe buffer operations where possible.
+    \item Validate user input.
+    \item Check all file operations.
+    \item Check memory allocations.
+    \item Prevent buffer overflows.
+    \item Avoid dereferencing NULL pointers.
+    \item Avoid use-after-free.
+    \item Avoid double-free.
+    \item Properly terminate strings.
+\end{itemize}
+
+Functions such as \texttt{gets()} shall never be used.
+
+Safer alternatives such as \texttt{fgets()} shall be preferred.
+
+% =========================================================
+% 25. FUTURE EXTENSIONS
+% =========================================================
+
+\section{Future Extensions}
+
+The architecture should allow future features without major redesign.
+
+Possible future extensions include:
+
+\begin{itemize}
+    \item Readability scoring.
+    \item Keyword extraction.
+    \item Stop-word filtering.
+    \item TF-IDF analysis.
+    \item Basic sentiment analysis using a lexicon.
+    \item Multiple file comparison.
+    \item Text similarity.
+    \item CSV report export.
+    \item JSON report export.
+    \item Graphical user interface.
+\end{itemize}
+
+These features are not part of the initial core implementation and
+shall not be added prematurely.
+
+% =========================================================
+% 26. ACCEPTANCE CRITERIA
+% =========================================================
+
+\section{Acceptance Criteria}
+
+The project shall be considered complete only when:
+
+\begin{enumerate}
+
+    \item The project builds successfully using the Makefile.
+
+    \item The application starts without runtime errors.
+
+    \item Text can be entered manually.
+
+    \item Text files can be loaded.
+
+    \item Basic statistics are calculated correctly.
+
+    \item Advanced statistics are calculated correctly.
+
+    \item Character frequency works correctly.
+
+    \item Word frequency works correctly.
+
+    \item Search works in both case-sensitive and
+    case-insensitive modes.
+
+    \item Replacement works without corrupting memory.
+
+    \item Text can be saved.
+
+    \item Reports can be generated.
+
+    \item Invalid input is handled safely.
+
+    \item File errors are handled safely.
+
+    \item Dynamic memory is properly released.
+
+    \item Test cases pass.
+
+    \item The project compiles without significant warnings.
+
+    \item README and documentation are complete.
+
+    \item Git history contains logical development phases.
+
+\end{enumerate}
+
+% =========================================================
+% 27. AGENT INSTRUCTIONS
+% =========================================================
+
+\section{Instructions for AI Coding Agent}
+
+This document is the authoritative architecture specification for the
+Text Analyzer project.
+
+The coding agent shall follow these rules:
+
+\begin{enumerate}
+
+    \item Read and understand this architecture before modifying code.
+
+    \item Implement the project incrementally according to the defined
+    development phases.
+
+    \item Do not implement all features in a single step.
+
+    \item Before beginning a new phase, verify that the previous phase
+    builds and works.
+
+    \item Preserve the directory structure unless a strong technical
+    reason requires modification.
+
+    \item If a structural change becomes necessary, explain the reason
+    before applying it.
+
+    \item Do not introduce external dependencies without explicit
+    approval.
+
+    \item Prefer standard C and the standard C library.
+
+    \item Keep modules independent and focused.
+
+    \item Do not move business logic into the UI module.
+
+    \item Do not duplicate code unnecessarily.
+
+    \item Use meaningful function and variable names.
+
+    \item Handle memory allocation and file operations safely.
+
+    \item Compile with:
+    
+\begin{verbatim}
+gcc -std=c11 -Wall -Wextra -Wpedantic
+\end{verbatim}
+
+    \item Run relevant tests after implementing each major feature.
+
+    \item Do not claim a feature is complete until it has been
+    compiled and tested.
+
+    \item If an implementation decision is ambiguous, choose the
+    simplest technically correct solution and document the decision.
+
+    \item Do not add speculative features merely to make the project
+    appear larger.
+
+\end{enumerate}
+
+% =========================================================
+% 28. FINAL PROJECT STRUCTURE
+% =========================================================
+
+\section{Final Architecture Summary}
+
+The final system shall follow:
+
+\begin{verbatim}
+                    TEXT ANALYZER
+                          |
+            +-------------+-------------+
+            |                           |
+        User Input                  File Input
+            |                           |
+            +-------------+-------------+
+                          |
+                          v
+                    Text Buffer
+                          |
+          +---------------+---------------+
+          |               |               |
+          v               v               v
+      Analyzer        Frequency        Search
+          |               |               |
+          +---------------+---------------+
+                          |
+                          v
+                       Report
+                          |
+                          v
+                    reports/*.txt
+\end{verbatim}
+
+The implementation shall prioritize correctness, modularity,
+maintainability, memory safety, testability, and clear separation of
+responsibilities.
+
+\end{document}
