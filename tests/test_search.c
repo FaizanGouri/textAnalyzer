@@ -111,11 +111,104 @@ static void test_invalid_input(void)
                   STATUS_ERROR_INPUT);
 }
 
+static void test_search_edge_cases(void)
+{
+    char *result = NULL;
+    size_t replacements = 0U;
+    Status status;
+
+    /* 1. Pattern longer than text */
+    expect_size("pattern longer than text",
+                count_occurrences("short", "verylongpattern", 1, 0), 0U);
+
+    /* 2. Pattern matches entire text */
+    status = replace_text("exact", "exact", "replaced", 1, 1, &result,
+                          &replacements);
+    expect_status("match entire text status", status, STATUS_SUCCESS);
+    expect_size("match entire text count", replacements, 1U);
+    expect_string("match entire text result", result, "replaced");
+    free(result);
+    result = NULL;
+
+    /* 3. Replacement with empty string (deletion) */
+    status = replace_text("one, two, three", ", ", "", 1, 0, &result,
+                          &replacements);
+    expect_status("deletion status", status, STATUS_SUCCESS);
+    expect_size("deletion count", replacements, 2U);
+    expect_string("deletion result", result, "onetwothree");
+    free(result);
+    result = NULL;
+
+    /* 4. Delete entire text */
+    status = replace_text("clear", "clear", "", 1, 1, &result,
+                          &replacements);
+    expect_status("delete entire status", status, STATUS_SUCCESS);
+    expect_size("delete entire count", replacements, 1U);
+    expect_string("delete entire result", result, "");
+    free(result);
+    result = NULL;
+
+    /* 5. Pattern at very beginning and end */
+    status = replace_text("alpha beta alpha", "alpha", "omega", 1, 1, &result,
+                          &replacements);
+    expect_status("begin and end status", status, STATUS_SUCCESS);
+    expect_size("begin and end count", replacements, 2U);
+    expect_string("begin and end result", result, "omega beta omega");
+    free(result);
+    result = NULL;
+
+    /* 6. Consecutive matches */
+    status = replace_text("ababab", "ab", "z", 1, 0, &result,
+                          &replacements);
+    expect_status("consecutive status", status, STATUS_SUCCESS);
+    expect_size("consecutive count", replacements, 3U);
+    expect_string("consecutive result", result, "zzz");
+    free(result);
+    result = NULL;
+
+    /* 7. Non-overlapping advance */
+    status = replace_text("aaaa", "aa", "b", 1, 0, &result,
+                          &replacements);
+    expect_status("non-overlapping replacement status", status, STATUS_SUCCESS);
+    expect_size("non-overlapping replacement count", replacements, 2U);
+    expect_string("non-overlapping replacement result", result, "bb");
+    free(result);
+    result = NULL;
+
+    /* 8. Replacement with special characters and symbols */
+    status = replace_text("var = val", "=", "<===>", 1, 0, &result,
+                          &replacements);
+    expect_status("special chars replacement status", status, STATUS_SUCCESS);
+    expect_size("special chars replacement count", replacements, 1U);
+    expect_string("special chars replacement result", result, "var <===> val");
+    free(result);
+    result = NULL;
+
+    /* 9. Case-insensitive replace */
+    status = replace_text("Foo foo FOO", "foo", "bar", 0, 1, &result,
+                          &replacements);
+    expect_status("case-insensitive replacement status", status, STATUS_SUCCESS);
+    expect_size("case-insensitive replacement count", replacements, 3U);
+    expect_string("case-insensitive replacement result", result, "bar bar bar");
+    free(result);
+    result = NULL;
+
+    /* 10. Large expansion */
+    status = replace_text("1 2", " ", " --- SPACER --- ", 1, 0, &result,
+                          &replacements);
+    expect_status("expansion status", status, STATUS_SUCCESS);
+    expect_size("expansion count", replacements, 1U);
+    expect_string("expansion result", result, "1 --- SPACER --- 2");
+    free(result);
+    result = NULL;
+}
+
 int main(void)
 {
     test_search_counts();
     test_replacement();
     test_invalid_input();
+    test_search_edge_cases();
 
     if (failures != 0) {
         printf("%d search test(s) failed.\n", failures);

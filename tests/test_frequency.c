@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -101,11 +102,79 @@ static void test_empty_and_ordering(void)
     free_word_frequency_table(&table);
 }
 
+static void test_frequency_edge_cases(void)
+{
+    size_t frequency[CHARACTER_FREQUENCY_SIZE];
+    WordFrequencyTable table;
+    char buffer[2048];
+    size_t i;
+
+    /* 1. Empty character frequency */
+    calculate_character_frequency("", frequency);
+    expect_int("empty character frequency most frequent",
+               get_most_frequent_character(frequency), -1);
+
+    /* 2. Only whitespace character frequency */
+    calculate_character_frequency("   \t\n  \r\n ", frequency);
+    expect_int("whitespace only character frequency",
+               get_most_frequent_character(frequency), -1);
+
+    /* 3. Empty word table most frequent */
+    word_frequency_table_init(&table);
+    expect_size("empty table most frequent index",
+                get_most_frequent_word_index(&table), SIZE_MAX);
+    free_word_frequency_table(&table);
+
+    /* 4. Digits only: no words */
+    table = table_for("12345 67890 999");
+    expect_size("digits only word count", table.size, 0U);
+    free_word_frequency_table(&table);
+
+    /* 5. Single word repeated 50 times */
+    buffer[0] = '\0';
+    for (i = 0; i < 50; i++) {
+        strcat(buffer, "repeat ");
+    }
+    table = table_for(buffer);
+    expect_size("single repeated word table size", table.size, 1U);
+    expect_size("single repeated word count", count_for(&table, "repeat"), 50U);
+    free_word_frequency_table(&table);
+
+    /* 6. Capacity growth: 60 unique words (initial capacity is 16) */
+    buffer[0] = '\0';
+    for (i = 0; i < 60; i++) {
+        char word[16];
+        sprintf(word, "%c%c ", 'a' + (int)(i / 26), 'a' + (int)(i % 26));
+        strcat(buffer, word);
+    }
+    table = table_for(buffer);
+    expect_size("60 unique words size", table.size, 60U);
+    for (i = 0; i < 60; i++) {
+        char word[16];
+        sprintf(word, "%c%c", 'a' + (int)(i / 26), 'a' + (int)(i % 26));
+        if (count_for(&table, word) != 1U) {
+            printf("FAIL: missing or wrong count for %s\n", word);
+            failures++;
+            break;
+        }
+    }
+    free_word_frequency_table(&table);
+
+    /* 7. Words at boundaries with various symbols */
+    table = table_for("[start] middle. (end)");
+    expect_size("boundary words count", table.size, 3U);
+    expect_size("start word count", count_for(&table, "start"), 1U);
+    expect_size("middle word count", count_for(&table, "middle"), 1U);
+    expect_size("end word count", count_for(&table, "end"), 1U);
+    free_word_frequency_table(&table);
+}
+
 int main(void)
 {
     test_word_frequency();
     test_character_frequency();
     test_empty_and_ordering();
+    test_frequency_edge_cases();
 
     if (failures != 0) {
         printf("%d frequency test(s) failed.\n", failures);
