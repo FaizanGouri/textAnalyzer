@@ -11,9 +11,10 @@ final-year project designed for a clean, maintainable, module-based codebase.
 
 ## Current status
 
-Phase 7 is complete: the application supports multiline text input, dynamic
-text storage, statistical and frequency analysis, search and replacement,
-plain-text file loading/saving, and exporting comprehensive analysis reports.
+Phase 8 is complete: the application features a modern, creative colored terminal
+dashboard with structured ASCII/box styling, live buffer status monitoring, aligned
+frequency tables, interactive search & replace, file management, report exporting,
+and comprehensive error handling.
 
 ## Build
 
@@ -26,6 +27,23 @@ make
 ```sh
 make run
 ```
+
+## User Interface & Terminal Experience
+
+- **Visual Dashboard:** Clean box borders, startup banner, and structured submenus.
+- **Live Status Area:** Displays current buffer status (`● TEXT LOADED` / `● EMPTY BUFFER`), word count, and character count.
+- **Consistent Prompts:** Unified prompt style (` › `) across all menu selections and inputs.
+- **Standardized Notifications:** Color-coded status tags (`[SUCCESS]`, `[ERROR]`, `[WARNING]`, `[INFO]`).
+- **ANSI Color Theme:**
+  - **Cyan:** Main headers, titles, and primary UI borders.
+  - **Blue:** Section separators, secondary information, and submenu frames.
+  - **Green:** Success notifications and loaded status.
+  - **Yellow:** Warnings, menu option numbers, and attention notices.
+  - **Red:** Error alerts and failed operations.
+- **Cross-Platform Compatibility:**
+  - Native Windows Virtual Terminal Processing and UTF-8 console code page enablement.
+  - Zero external library dependencies (no ncurses).
+  - Automatic detection: disables colors when `NO_COLOR` environment variable is set.
 
 ## Project layout
 
