@@ -16,6 +16,8 @@ void text_buffer_init(TextBuffer *buffer);
 void text_buffer_clear(TextBuffer *buffer);
 void text_buffer_free(TextBuffer *buffer);
 Status text_buffer_append(TextBuffer *buffer, const char *text);
+Status text_buffer_append_bytes(TextBuffer *buffer, const char *data,
+                                size_t length);
 Status text_input_multiline(TextBuffer *buffer, FILE *input);
 void text_buffer_display(const TextBuffer *buffer, FILE *output);
 void text_buffer_replace_data(TextBuffer *buffer, char *replacement);

@@ -35,21 +35,29 @@ void text_buffer_free(TextBuffer *buffer)
 
 Status text_buffer_append(TextBuffer *buffer, const char *text)
 {
-    size_t text_length;
+    if (text == NULL) {
+        return STATUS_ERROR_INVALID;
+    }
+
+    return text_buffer_append_bytes(buffer, text, strlen(text));
+}
+
+Status text_buffer_append_bytes(TextBuffer *buffer, const char *data,
+                                size_t length)
+{
     size_t required_capacity;
     size_t new_capacity;
     char *new_data;
 
-    if (buffer == NULL || text == NULL) {
+    if (buffer == NULL || (data == NULL && length > 0U)) {
         return STATUS_ERROR_INVALID;
     }
 
-    text_length = strlen(text);
-    if (text_length > SIZE_MAX - buffer->length - 1U) {
+    if (length > SIZE_MAX - buffer->length - 1U) {
         return STATUS_ERROR_MEMORY;
     }
 
-    required_capacity = buffer->length + text_length + 1U;
+    required_capacity = buffer->length + length + 1U;
     if (required_capacity > buffer->capacity) {
         new_capacity = buffer->capacity == 0U ? INPUT_CHUNK_SIZE : buffer->capacity;
         while (new_capacity < required_capacity) {
@@ -69,8 +77,11 @@ Status text_buffer_append(TextBuffer *buffer, const char *text)
         buffer->capacity = new_capacity;
     }
 
-    memcpy(buffer->data + buffer->length, text, text_length + 1U);
-    buffer->length += text_length;
+    if (length > 0U) {
+        memcpy(buffer->data + buffer->length, data, length);
+    }
+    buffer->length += length;
+    buffer->data[buffer->length] = '\0';
     return STATUS_SUCCESS;
 }
 

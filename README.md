@@ -11,9 +11,9 @@ final-year project designed for a clean, maintainable, module-based codebase.
 
 ## Current status
 
-Phase 5 is complete: the application supports multiline text input, dynamic
-text storage, statistical and frequency analysis, plus search and replacement.
-File operations and generated reports are not yet implemented.
+Phase 6 is complete: the application supports multiline text input, dynamic
+text storage, statistical and frequency analysis, search and replacement, and
+loading/saving plain-text files. Generated reports are not yet implemented.
 
 ## Build
 
@@ -45,6 +45,14 @@ The root LaTeX architecture specification is the authoritative design document.
 - Occurrence counting with case-sensitive or case-insensitive matching
 - Whole-word and substring matching
 - Confirmed text replacement
+- Load complete `.txt` files into the current text buffer
+- Save current text to a `.txt` file, including empty text
+
+## File workflow
+
+Use menu option 7 to load a text file and option 8 to save the current text.
+Failed loads leave the current text unchanged. File-open, read, write, close,
+and memory-allocation failures are reported to the user.
 - Search and replacement
 - Text-file loading and saving
 - Analysis reports

@@ -1,6 +1,7 @@
 #include "ui.h"
 
 #include "analyzer.h"
+#include "file_handler.h"
 #include "frequency.h"
 #include "search.h"
 
@@ -26,6 +27,8 @@ static void display_menu(void)
     puts("4. Analyze Text");
     puts("5. Frequency Analysis");
     puts("6. Search & Replace");
+    puts("7. Load Text File");
+    puts("8. Save Text File");
     puts("0. Exit");
     fputs("\nEnter choice: ", stdout);
 }
@@ -128,6 +131,62 @@ static void enter_text(TextBuffer *buffer)
         puts("[ERROR] Invalid text input.");
     } else if (buffer->length == 0U) {
         puts("[No text entered.]");
+    }
+}
+
+static void load_text_file_ui(TextBuffer *buffer)
+{
+    char filename[SEARCH_INPUT_SIZE];
+    int read_result;
+    Status status;
+
+    read_result = read_text_line("File path: ", filename, sizeof(filename));
+    if (read_result <= 0) {
+        return;
+    }
+    if (filename[0] == '\0') {
+        puts("[ERROR] File path cannot be empty.");
+        return;
+    }
+
+    status = load_text_file(filename, buffer);
+    if (status == STATUS_SUCCESS) {
+        if (buffer->length == 0U) {
+            puts("Text file loaded successfully. The file is empty.");
+        } else {
+            puts("Text file loaded successfully.");
+        }
+    } else if (status == STATUS_ERROR_MEMORY) {
+        puts("[ERROR] Memory allocation failed. Current text was not changed.");
+    } else if (status == STATUS_ERROR_INVALID) {
+        puts("[ERROR] Invalid file path. Current text was not changed.");
+    } else {
+        puts("[ERROR] Unable to load file. Current text was not changed.");
+    }
+}
+
+static void save_text_file_ui(const TextBuffer *buffer)
+{
+    char filename[SEARCH_INPUT_SIZE];
+    int read_result;
+    Status status;
+
+    read_result = read_text_line("File path: ", filename, sizeof(filename));
+    if (read_result <= 0) {
+        return;
+    }
+    if (filename[0] == '\0') {
+        puts("[ERROR] File path cannot be empty.");
+        return;
+    }
+
+    status = save_text_file(filename, buffer);
+    if (status == STATUS_SUCCESS) {
+        puts("Text file saved successfully.");
+    } else if (status == STATUS_ERROR_INVALID) {
+        puts("[ERROR] Invalid file path or text buffer.");
+    } else {
+        puts("[ERROR] Unable to save file.");
     }
 }
 
@@ -585,6 +644,12 @@ Status ui_run(TextBuffer *buffer)
                 break;
             case 6:
                 search_and_replace(buffer);
+                break;
+            case 7:
+                load_text_file_ui(buffer);
+                break;
+            case 8:
+                save_text_file_ui(buffer);
                 break;
             case 0:
                 return STATUS_SUCCESS;
