@@ -122,6 +122,21 @@ void text_buffer_display(const TextBuffer *buffer, FILE *output)
     }
 }
 
+void text_buffer_replace_data(TextBuffer *buffer, char *replacement)
+{
+    size_t replacement_length;
+
+    if (buffer == NULL || replacement == NULL) {
+        return;
+    }
+
+    replacement_length = strlen(replacement);
+    text_buffer_clear(buffer);
+    buffer->data = replacement;
+    buffer->length = replacement_length;
+    buffer->capacity = replacement_length + 1U;
+}
+
 int text_is_word_character(unsigned char character)
 {
     return isalpha(character) != 0;

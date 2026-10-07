@@ -2,6 +2,7 @@
 
 #include "analyzer.h"
 #include "frequency.h"
+#include "search.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -9,8 +10,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MENU_INPUT_SIZE 64U
+#define SEARCH_INPUT_SIZE 512U
 
 static void display_menu(void)
 {
@@ -22,6 +25,7 @@ static void display_menu(void)
     puts("3. Clear Current Text");
     puts("4. Analyze Text");
     puts("5. Frequency Analysis");
+    puts("6. Search & Replace");
     puts("0. Exit");
     fputs("\nEnter choice: ", stdout);
 }
@@ -45,6 +49,65 @@ static int read_menu_choice(int *choice)
 
     *choice = (int)value;
     return 1;
+}
+
+static int read_text_line(const char *prompt, char *text, size_t capacity)
+{
+    char *newline;
+    int character;
+
+    if (prompt == NULL || text == NULL || capacity < 2U) {
+        return -1;
+    }
+
+    fputs(prompt, stdout);
+    if (fgets(text, (int)capacity, stdin) == NULL) {
+        return 0;
+    }
+
+    newline = strchr(text, '\n');
+    if (newline != NULL) {
+        *newline = '\0';
+        if (newline > text && newline[-1] == '\r') {
+            newline[-1] = '\0';
+        }
+        return 1;
+    }
+
+    while ((character = fgetc(stdin)) != '\n' && character != EOF) {
+    }
+    puts("[ERROR] Input is too long.");
+    return -1;
+}
+
+static int ask_yes_no(const char *prompt, int default_value, int *answer)
+{
+    char input[MENU_INPUT_SIZE];
+    int read_result;
+
+    if (answer == NULL) {
+        return 0;
+    }
+
+    for (;;) {
+        read_result = read_text_line(prompt, input, sizeof(input));
+        if (read_result <= 0) {
+            return read_result;
+        }
+        if (input[0] == '\0') {
+            *answer = default_value;
+            return 1;
+        }
+        if (input[1] == '\0' && (input[0] == 'y' || input[0] == 'Y')) {
+            *answer = 1;
+            return 1;
+        }
+        if (input[1] == '\0' && (input[0] == 'n' || input[0] == 'N')) {
+            *answer = 0;
+            return 1;
+        }
+        puts("Please enter y or n.");
+    }
 }
 
 static void enter_text(TextBuffer *buffer)
@@ -313,6 +376,175 @@ static void frequency_analysis(const TextBuffer *buffer)
     }
 }
 
+static void display_search_result(const char *pattern, int case_sensitive,
+                                  int whole_word, size_t occurrences)
+{
+    puts("========================================");
+    puts("             SEARCH RESULT");
+    puts("========================================");
+    printf("Search: %s\n", pattern);
+    printf("Mode: %s\n", case_sensitive ? "Case Sensitive" : "Case Insensitive");
+    printf("Type: %s\n", whole_word ? "Whole Word" : "Substring/Phrase");
+    if (occurrences == 0U) {
+        puts("No occurrences found.");
+    } else {
+        printf("Occurrences found: %zu\n", occurrences);
+    }
+    puts("========================================");
+}
+
+static void search_current_text(const TextBuffer *buffer, int word_default)
+{
+    char pattern[SEARCH_INPUT_SIZE];
+    int case_sensitive;
+    int whole_word;
+    int read_result;
+    size_t occurrences;
+
+    if (buffer == NULL || buffer->data == NULL || buffer->length == 0U) {
+        puts("[ERROR] No text available for search.");
+        return;
+    }
+
+    read_result = read_text_line("Search text: ", pattern, sizeof(pattern));
+    if (read_result == 0) {
+        return;
+    }
+    if (read_result < 0 || pattern[0] == '\0') {
+        puts("[ERROR] Search pattern cannot be empty.");
+        return;
+    }
+    if (ask_yes_no("Case-sensitive? (y/n): ", 0, &case_sensitive) <= 0 ||
+        ask_yes_no(word_default ? "Whole-word matching? (y/n) [y]: "
+                                : "Whole-word matching? (y/n) [n]: ",
+                   word_default, &whole_word) <= 0) {
+        return;
+    }
+
+    occurrences = count_occurrences(buffer->data, pattern, case_sensitive,
+                                    whole_word);
+    display_search_result(pattern, case_sensitive, whole_word, occurrences);
+}
+
+static void replace_current_text(TextBuffer *buffer, int word_default)
+{
+    char pattern[SEARCH_INPUT_SIZE];
+    char replacement[SEARCH_INPUT_SIZE];
+    char *result;
+    int case_sensitive;
+    int whole_word;
+    int confirmed;
+    int read_result;
+    size_t matches;
+    size_t replacements;
+    Status status;
+
+    if (buffer == NULL || buffer->data == NULL || buffer->length == 0U) {
+        puts("[ERROR] No text available for search.");
+        return;
+    }
+
+    read_result = read_text_line("Search text: ", pattern, sizeof(pattern));
+    if (read_result == 0) {
+        return;
+    }
+    if (read_result < 0 || pattern[0] == '\0') {
+        puts("[ERROR] Search pattern cannot be empty.");
+        return;
+    }
+    if (read_text_line("Replacement text: ", replacement,
+                       sizeof(replacement)) <= 0) {
+        return;
+    }
+    if (ask_yes_no("Case-sensitive? (y/n): ", 0, &case_sensitive) <= 0 ||
+        ask_yes_no(word_default ? "Whole-word matching? (y/n) [y]: "
+                                : "Whole-word matching? (y/n) [n]: ",
+                   word_default, &whole_word) <= 0) {
+        return;
+    }
+
+    matches = count_occurrences(buffer->data, pattern, case_sensitive,
+                                whole_word);
+    if (matches == 0U) {
+        puts("No matching occurrences found.");
+        puts("Text was not changed.");
+        return;
+    }
+    printf("Original text contains %zu matching occurrence(s).\n", matches);
+    if (replacement[0] == '\0') {
+        puts("Empty replacement will remove matching text.");
+    }
+    if (ask_yes_no("Replace these occurrences? (y/n): ", 0, &confirmed) <= 0 ||
+        !confirmed) {
+        puts("Replacement cancelled.");
+        return;
+    }
+
+    result = NULL;
+    replacements = 0U;
+    status = replace_text(buffer->data, pattern, replacement, case_sensitive,
+                          whole_word, &result, &replacements);
+    if (status == STATUS_ERROR_MEMORY) {
+        puts("[ERROR] Memory allocation failed. Text was not changed.");
+        return;
+    }
+    if (status != STATUS_SUCCESS || result == NULL) {
+        puts("[ERROR] Replacement failed. Text was not changed.");
+        return;
+    }
+
+    text_buffer_replace_data(buffer, result);
+    printf("%zu occurrence(s) replaced successfully.\n", replacements);
+}
+
+static void display_search_menu(void)
+{
+    puts("======= SEARCH & REPLACE =======");
+    puts("1. Search Word");
+    puts("2. Search Phrase");
+    puts("3. Count Occurrences");
+    puts("4. Replace Word");
+    puts("5. Replace Phrase");
+    puts("0. Back");
+    fputs("\nEnter choice: ", stdout);
+}
+
+static void search_and_replace(TextBuffer *buffer)
+{
+    int choice;
+    int read_result;
+
+    for (;;) {
+        display_search_menu();
+        read_result = read_menu_choice(&choice);
+        if (read_result == 0 || choice == 0) {
+            return;
+        }
+        if (read_result < 0 || choice < 0 || choice > 5) {
+            puts("Invalid choice.");
+            continue;
+        }
+
+        switch (choice) {
+            case 1:
+                search_current_text(buffer, 1);
+                break;
+            case 2:
+            case 3:
+                search_current_text(buffer, 0);
+                break;
+            case 4:
+                replace_current_text(buffer, 1);
+                break;
+            case 5:
+                replace_current_text(buffer, 0);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 Status ui_run(TextBuffer *buffer)
 {
     int choice;
@@ -350,6 +582,9 @@ Status ui_run(TextBuffer *buffer)
                 break;
             case 5:
                 frequency_analysis(buffer);
+                break;
+            case 6:
+                search_and_replace(buffer);
                 break;
             case 0:
                 return STATUS_SUCCESS;
